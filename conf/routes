@@ -1,0 +1,21 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# Home page
+GET     /                           controllers.Application.index()
+
+GET		/test						controllers.Application.newPage()
+
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)
+
+
+POST	/member						controllers.MemberController.createMember()
+PUT		/member						controllers.MemberController.updateMember()
+GET		/members					controllers.MemberController.getAllMembers()
+GET		/member/:email				controllers.MemberController.getMemberByEmail(email: String)
+GET		/member/:id					controllers.MemberController.getMemberById(id: Integer)
+DELETE	/member/:id					controllers.MemberController.deleteMember(id: Integer)
+GET		/member/login				controllers.MemberController.login()
