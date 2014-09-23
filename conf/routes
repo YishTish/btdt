@@ -12,10 +12,35 @@ GET		/test						controllers.Application.newPage()
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 
-POST	/member						controllers.MemberController.createMember()
+POST	/member						controllers.MemberController.insertMember()
 PUT		/member						controllers.MemberController.updateMember()
 GET		/members					controllers.MemberController.getAllMembers()
-GET		/member/:email				controllers.MemberController.getMemberByEmail(email: String)
-GET		/member/:id					controllers.MemberController.getMemberById(id: Integer)
+GET		/member/email/:email				controllers.MemberController.getMemberByEmail(email: String)
+GET		/member/id/:id					controllers.MemberController.getMemberById(id: Integer)
 DELETE	/member/:id					controllers.MemberController.deleteMember(id: Integer)
 GET		/member/login				controllers.MemberController.login()
+
+
+
+POST	/location						controllers.LocationController.insertLocation()
+PUT		/location						controllers.LocationController.updateLocation()
+GET		/locations						controllers.LocationController.getAllLocations()
+GET		/location/name/:name			controllers.LocationController.getLocationsByName(name: String)
+GET		/location/code/:code			controllers.LocationController.getLocationByCode(code: String)
+GET		/location/id/:id				controllers.LocationController.getLocation(id: Integer)
+DELETE	/location/:id					controllers.LocationController.deleteLocation(id: Integer)
+GET		/location/updatecode/:id		controllers.LocationController.generateLocationCode(id: Integer)
+
+POST	/activity						controllers.ActivityController.insertActivity()
+PUT		/activity						controllers.ActivityController.updateActivity()
+GET		/activities						controllers.ActivityController.getAllActivities()
+GET		/activity/:id					controllers.ActivityController.getActivity(id: Integer)
+DELETE	/activity/:id					controllers.ActivityController.deleteActivity(id: Integer)
+
+
+POST	/activityType						controllers.ActivityTypeController.insertActivityType()
+PUT		/activityType						controllers.ActivityTypeController.updateActivityType()
+GET		/activityTypes						controllers.ActivityTypeController.getAllActivityTypes()
+GET		/activityType/:id					controllers.ActivityTypeController.getActivityType(id: Integer)
+GET		/activityType/:id/activate			controllers.ActivityTypeController.activateActivityType(id: Integer)
+GET		/activityType/:id/inactivate		controllers.ActivityTypeController.inactivateActivityType(id: Integer)

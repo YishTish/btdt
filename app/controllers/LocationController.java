@@ -3,39 +3,51 @@ package controllers;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.PersistenceException;
+
 import org.apache.commons.lang3.RandomStringUtils;
+
 import models.Location;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
 import play.mvc.Result;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Results;
+import utilities.JsonValidator;
 
 public class LocationController extends Controller {
 	
-	public static Result createLocation() {
-		JsonNode locationNode = request().body().asJson();
-		String locationName = locationNode.findPath("name").asText();
-		String locationDescription = locationNode.findPath("description").asText();
-		Double locationLongitude = locationNode.findPath("longitude").asDouble();
-		Double locationLatitude = locationNode.findPath("latitude").asDouble();
-		String locationCode = locationNode.findPath("code").asText();
+	public static Result insertLocation() {
 		
-		List<String> errorMessages = validateMandatory(locationName, locationLongitude, locationLatitude);
+		JsonNode locationNode = request().body().asJson();
+		
+		String[] fields = {"name","description","longitude","latitude"};
+		List<String> errors = JsonValidator.validateFieldsExist(locationNode,fields);
+		if(errors.size() > 0){
+			return Results.badRequest(Json.toJson(errors));
+		}
+		Location location = populateObject(new Location(), locationNode);
+		List<String> errorMessages = validateMandatory(location);
 		if(errorMessages.size() > 0){
 			return badRequest(Json.toJson(errorMessages));
 		}
-		if(locationCode==null || "".equals(locationCode)){
-			locationCode = generateCode();
+
+		try{
+			location.save();
+			return Results.ok(Json.toJson(location));
 		}
-		
-		Location location = new Location(locationName,locationDescription,locationLongitude, locationLatitude, locationCode);
-		location.save();
-		return Results.ok(Json.toJson(location));
+		catch(PersistenceException pe){
+			return Results.internalServerError(pe.getMessage());
+		}
 	}
 	
-	private static List<String> validateMandatory(String name, Double longitude, Double latitude ){
+	private static List<String> validateMandatory(Location location ){
+		String name = location.name;
+		Double longitude = location.longitude;
+		Double latitude = location.latitude;
+		
 		List<String> errorMessages= new ArrayList<>();
 		if(name == null || "".equals(name)){
 			errorMessages.add("Location name is required.");
@@ -58,36 +70,75 @@ public class LocationController extends Controller {
 		return locationCode;
 	}
 
-	public static Result updateLocation(){
-		JsonNode locationNode = request().body().asJson();
-		Integer locationId = locationNode.findPath("id").asInt();
-		Location location = Location.find.byId(locationId);
+	private static Location populateObject(Location location, JsonNode locationNode){
+		String locationName;
+		String locationDescription;
+		Double locationLongitude;
+		Double locationLatitude;
+		String locationCode;
+		
 		if(location == null){
-			return Results.badRequest("Could not find Locatoin with the Id provided");
+			location = new Location();
 		}
 		
-		String  locationName = locationNode.findPath("name").asText();
-		if(locationName != null && !"".equals(locationName)){
+		locationName = locationNode.findPath("name").asText();
+		if(locationName != null){
 			location.name = locationName;
 		}
 		
-		String  locationDescription = locationNode.findPath("description").asText();
-		if(locationDescription != null && !"".equals(locationDescription)){
+		locationDescription = locationNode.findPath("description").asText();
+		if(locationDescription != null ){
 			location.description = locationDescription;
 		}
-		Double  locationLongitude = locationNode.findPath("longitude").asDouble();
-		if(locationLongitude != null && locationLongitude.intValue() > 0){
+		locationLongitude = locationNode.findValue("longitude").asDouble();
+		if(locationLongitude != null && locationLongitude.doubleValue() > 0){
 			location.longitude = locationLongitude;
 		}
-		Double  locationLatitude = locationNode.findPath("latitude").asDouble();
-		if(locationLatitude != null && locationLatitude.intValue() > 0){
+		locationLatitude = locationNode.findValue("latitude").asDouble();
+		if(locationLatitude != null && locationLatitude.doubleValue() > 0){
 			location.latitude = locationLatitude;
 		}
-		String  locationCode = locationNode.findPath("code").asText();
-		if(locationCode != null && !"".equals(locationCode)){
-			location.code = locationCode;
+		JsonNode locationCodeJson = locationNode.findValue("code");
+		if(locationCodeJson != null){
+			location.code = locationCodeJson.textValue();
 		}
-		location.update();
+		else{
+			if(location.code==null || "".equals(location.code)){
+				location.code = generateCode();
+			}
+		}
+		return location;
+	}
+	
+	
+	public static Result updateLocation(){
+		JsonNode locationNode = request().body().asJson();
+		String[] fields = {"id", "name","description","longitude","latitude"};
+		List<String> errors = JsonValidator.validateFieldsExist(locationNode,fields);
+		if(errors.size() > 0){
+			return Results.badRequest(Json.toJson(errors));
+		}
+		Integer locationId = locationNode.findPath("id").asInt();
+		Location location = Location.find.byId(locationId);
+		String noIdError = null;
+		if(location == null){
+			noIdError = "Could not find Locatoin with the Id provided";
+			return Results.badRequest(Json.toJson(noIdError));
+		}
+		else{
+			location = populateObject(location, locationNode);
+		}
+		List<String> errorMessages = validateMandatory(location);
+		
+		if(errorMessages!= null && errorMessages.size() > 0){
+			return Results.badRequest(Json.toJson(errorMessages));
+		}
+		try{
+			location.update();
+		}
+		catch(PersistenceException pe){
+			Results.internalServerError(pe.getMessage());
+		}
 		return Results.ok(Json.toJson(location));
 	}
 	
@@ -96,8 +147,13 @@ public class LocationController extends Controller {
 		if(location == null){
 			return Results.badRequest("No Location found with the Id provided");
 		}
-		location.delete();
-		return Results.ok();
+		try{
+			location.delete();
+			return Results.ok();
+		}
+		catch(PersistenceException pe){
+			return Results.internalServerError("Failed to delete location: "+pe.getMessage());
+		}
 	}
 	
 	public static Result getAllLocations(){
@@ -112,31 +168,27 @@ public class LocationController extends Controller {
 		}
 		String newCode = generateCode();
 		location.code = newCode;
-		location.update();
+		try{
+			location.update();
+		}
+		catch(PersistenceException pe){
+			return Results.internalServerError(pe.getMessage());
+		}
 		return Results.ok(Json.toJson(location));
 	}
 	
 	public static Result getLocation(Integer id){
 		Location location = Location.find.byId(id);
-		if(location == null){
-			return Results.badRequest("No Location found with the Id provided");
-		}
 		return Results.ok(Json.toJson(location));
 	}
 	
 	public static Result getLocationByCode(String code){
 		Location location = Location.find.where().eq("code",code).findUnique();
-		if(location == null){
-			return Results.badRequest("No Location found with the code provided");
-		}
 		return Results.ok(Json.toJson(location));
 	}
 	
 	public static Result getLocationsByName(String name){
-		List<Location> locations = Location.find.where().like("code","%"+name+"%").findList();
-		if(locations == null || locations.size()==0){
-			return Results.badRequest("No Location found matching the name provided");
-		}
+		List<Location> locations = Location.find.where().like("name","%"+name+"%").findList();
 		return Results.ok(Json.toJson(locations));
 	}
 	

@@ -8,6 +8,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import play.db.ebean.Model;
 import play.data.format.*;
@@ -16,9 +18,12 @@ import play.data.format.Formats.DateTime;
 
 import org.mindrot.jbcrypt.BCrypt;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 
 
 @Entity
+@Table(uniqueConstraints=@UniqueConstraint(columnNames="email"))
 public class Member extends Model{
 	
 	
@@ -35,7 +40,7 @@ public class Member extends Model{
 		setType(type2);
 		joinDate = new Date();
 	}
-
+	
 	@Id
 	@Column (name="member_id")
 	public Integer id;
@@ -51,6 +56,7 @@ public class Member extends Model{
 	@Formats.DateTime(pattern = "dd/mm/yyyy")
 	private  Date joinDate;
 	
+	@JsonManagedReference
 	@OneToMany(mappedBy="member", cascade=CascadeType.ALL)
 	private List<Activity> activities;
 	

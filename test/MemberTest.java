@@ -5,28 +5,12 @@ import java.util.List;
 import models.Member;
 import static play.test.Helpers.*;
 
-
-import org.apache.commons.logging.Log;
-import org.h2.util.TempFileDeleter;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.ning.http.client.Request;
-
-import play.Logger;
-import play.api.libs.ws.WSRequest;
-import play.api.libs.ws.WSRequestHolder;
-import play.api.test.FakeRequest;
-
 import play.libs.Json;
-import play.libs.ws.WS;
 import play.mvc.Result;
-import play.mvc.Controller;
-import play.test.FakeApplication;
 
 
 
@@ -43,18 +27,24 @@ public class MemberTest {
 	
 	
 	public void insertMember(){
-		List<Member> members = Member.find.where().like("email", "%"+email).findList();
+		/*
+		 
 		if(members!=null){
 			for(Member member : members)
 				member.delete();
 		}
-		Member member = new Member(fname, lname, email, password, type);
-		member.save();
+		*/
+		Member member = Member.find.where().eq("email", email).findUnique();
+		if(member == null){
+			member = new Member(fname, lname, email, password, type);
+			member.save();
+		}
 		id = member.getId();
 	}
 	
 	public void deleteMember(){
-		Member.find.byId(id).delete();
+		Member deadMember = Member.find.byId(id);
+		if(deadMember != null) deadMember.delete();
 	}
 	
 	private void deleteMember(Integer memberId){
@@ -73,7 +63,11 @@ public class MemberTest {
 	
 	@After
 	public void stopApp(){
+		if(id > 0){
+			deleteMember();
+		}
 		stop(fakeApplication());
+		id =0;
 	}
 	
 	@Test
@@ -119,7 +113,7 @@ public class MemberTest {
 	}
 	
 	@Test
-	public void testCreateMemberByController(){
+	public void testinsertMemberByController(){
 		Member memberToDelete = Member.find.where().eq("email", "yishail@gmail.com").findUnique();
 		if(memberToDelete!=null){
 			memberToDelete.delete();
@@ -134,7 +128,7 @@ public class MemberTest {
     	if(tempMember != null ){
     		tempMember.delete();
 		}
-    	Result result = callAction(controllers.routes.ref.MemberController.createMember(), 
+    	Result result = callAction(controllers.routes.ref.MemberController.insertMember(), 
 				fakeRequest().withHeader("Conent-Type","application/json").withJsonBody(memberJson)
 				);
 		assertEquals(OK, status(result));
@@ -157,7 +151,7 @@ public class MemberTest {
 		memberJson.put("email", instanceEmail);
 		memberJson.put("type", 1);
 		
-		Result result = callAction(controllers.routes.ref.MemberController.createMember(), 
+		Result result = callAction(controllers.routes.ref.MemberController.insertMember(), 
 				fakeRequest().withHeader("Conent-Type","application/json").withJsonBody(memberJson)
 				);
 		assertEquals(OK, status(result));
@@ -235,7 +229,7 @@ public class MemberTest {
 		memberJson.put("lname", lname+"ww");
 		memberJson.put("email", email);
 		memberJson.put("type", 2);
-		Result result = callAction(controllers.routes.ref.MemberController.createMember(), 
+		Result result = callAction(controllers.routes.ref.MemberController.insertMember(), 
 				fakeRequest().withHeader("Conent-Type","application/json").withJsonBody(memberJson)
 				);
 		assertTrue(status(result)==BAD_REQUEST);
@@ -246,20 +240,36 @@ public class MemberTest {
 	@Test
 	public void testUpdateMemberWithExistingEmail(){
 		insertMember();
-    	ObjectNode memberJson = Json.newObject();
+		
+		Member newMember = new Member("tempFname","tempLname","temp@email.com","tempPassword",2);
+		newMember.save();
+		
+		ObjectNode memberJson = Json.newObject();
 		memberJson.put("id",id);
 		memberJson.put("fname", "updatedFname");
 		memberJson.put("lname", lname);
-		memberJson.put("email", email);
+		memberJson.put("email", newMember.getEmail());
 		memberJson.put("type", type);
 		Result result = callAction(controllers.routes.ref.MemberController.updateMember(), 
 				fakeRequest().withHeader("Conent-Type","application/json").withJsonBody(memberJson));
 		//test trying to update to an email that exists
-		assertTrue("Testing update of a member's email to an address that already exists in the db",status(result) == BAD_REQUEST);
+		assertTrue("Testing update of a member's email to an address that already exists in the db. Wanted "+ BAD_REQUEST+", got "+status(result),status(result) == BAD_REQUEST);
 		assertTrue(contentAsString(result).contains("Update failed. Trying to update with an email address that is already registered"));
 
+		newMember.delete();
+		
+	}
+	
+	@Test
+	public void testUpdateWithInvalidId(){
+		ObjectNode memberJson = Json.newObject();
+		memberJson.put("fname", fname);
+		memberJson.put("lname", lname);
+		memberJson.put("email", email);
+		memberJson.put("type", type);
 		memberJson.put("id", -1);
-		result = callAction(controllers.routes.ref.MemberController.updateMember(), 
+		
+		Result result = callAction(controllers.routes.ref.MemberController.updateMember(), 
 				fakeRequest().withHeader("Conent-Type","application/json").withJsonBody(memberJson));
 		assertTrue("Testing updating a member with an invalid id",status(result)==BAD_REQUEST);
 		//test updating to an account that doesn't exist

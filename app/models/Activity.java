@@ -7,14 +7,26 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import play.db.ebean.*;
 import play.data.validation.*;
-import play.data.format.*;
 import play.data.format.Formats.DateTime;
-import static play.db.ebean.EbeanPlugin.generateEvolutionScript;
 
 @Entity
 public class Activity extends Model{
+	
+	public Activity(Member iMember, ActivityType iActivityType, Date iDate, Location iLocation, String iComments){
+		member = iMember;
+		activityType = iActivityType;
+		date = iDate;
+		location = iLocation;
+		comments = iComments;
+	}
+	
+	public Activity(){
+		
+	}
 	
 	/**
 	 * 
@@ -25,17 +37,21 @@ public class Activity extends Model{
 	@Column(name="activity_id")
 	private Integer id;
 	
+	@JsonBackReference
 	@Constraints.Required
 	@ManyToOne
 	private Member member;
 	
+	@JsonBackReference
 	@Constraints.Required
 	@ManyToOne
 	private ActivityType activityType;
 	
+	
 	@DateTime(pattern = "dd/mm/yyyy hh:mm:ss")
 	private Date date;
 	
+	@JsonBackReference
 	@ManyToOne
 	private Location location;
 	
