@@ -7,6 +7,7 @@ import java.util.List;
 import javax.persistence.PersistenceException;
 
 import models.ActivityType;
+import actions.CorsComposition;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -14,8 +15,10 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Results;
+import play.mvc.With;
 import utilities.JsonValidator;
 
+@With(CorsComposition.CorsAction.class)
 public class ActivityTypeController extends Controller {
 	
 	public static Result insertActivityType(){

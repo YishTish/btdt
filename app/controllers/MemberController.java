@@ -5,36 +5,57 @@ import java.util.List;
 
 
 
+
+
+
+
 import javax.persistence.PersistenceException;
 
 import org.apache.commons.lang3.RandomStringUtils;
+
+import actions.CorsComposition;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import models.Member;
+import play.Logger;
+import play.Logger.ALogger;
 import play.libs.Json;
 import play.mvc.Result;
 import play.mvc.Results;
 import play.mvc.Controller;
 import play.mvc.BodyParser;
+import play.mvc.With;
 import utilities.JsonValidator;
 
+@With(CorsComposition.CorsAction.class)
 public class MemberController extends Controller {
 	
+	private static final ALogger logger = Logger.of(MemberController.class);
+
+	
 	public static Result getAllMembers() {
-		
+		logger.debug("getting all members");
 		List<Member> members = Member.find.all();
 		return Results.ok(Json.toJson(members));
 	}
 	
 	public static Result getMemberById(Integer memberId){
+		logger.error("sdsd");
 		Member member = Member.find.byId(memberId);
-		return Results.ok(Json.toJson(member));
+		if(member!= null){
+			return Results.ok(Json.toJson(member));
+		}
+		else return Results.ok();
 	}
 	
 	public static Result getMemberByEmail(String email){
 		return Results.ok(Json.toJson(Member.find.where().eq("email",email).findUnique()));
+	}
+	
+	public static Result Cors(){
+		return Results.ok("cors enabled method");
 	}
 	
 	
@@ -148,6 +169,7 @@ public class MemberController extends Controller {
 	}
 	
 	public static Result deleteMember(Integer memberId){
+		System.out.println("got to deleting member method");
 		Member member = Member.find.byId(memberId);
 		try{
 			member.delete();

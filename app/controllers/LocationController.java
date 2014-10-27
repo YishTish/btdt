@@ -8,6 +8,7 @@ import javax.persistence.PersistenceException;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import models.Location;
+import actions.CorsComposition;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -15,8 +16,10 @@ import play.mvc.Result;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Results;
+import play.mvc.With;
 import utilities.JsonValidator;
 
+@With(CorsComposition.CorsAction.class)
 public class LocationController extends Controller {
 	
 	public static Result insertLocation() {

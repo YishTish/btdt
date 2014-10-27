@@ -12,6 +12,7 @@ import models.Activity;
 import models.ActivityType;
 import models.Location;
 import models.Member;
+import actions.CorsComposition;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -19,8 +20,10 @@ import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Results;
+import play.mvc.With;
 import utilities.JsonValidator;
 
+@With(CorsComposition.CorsAction.class)
 public class ActivityController extends Controller{
 	
 	static Result result;
