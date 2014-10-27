@@ -5,6 +5,9 @@
 # Home page
 GET     /                           controllers.Application.index()
 
+OPTIONS /*path 			            controllers.Application.preflight(path: String)
+
+
 GET		/test						controllers.Application.newPage()
 
 
@@ -17,7 +20,7 @@ PUT		/member						controllers.MemberController.updateMember()
 GET		/members					controllers.MemberController.getAllMembers()
 GET		/member/email/:email				controllers.MemberController.getMemberByEmail(email: String)
 GET		/member/id/:id					controllers.MemberController.getMemberById(id: Integer)
-DELETE	/member/:id					controllers.MemberController.deleteMember(id: Integer)
+DELETE	/members/:id					controllers.MemberController.deleteMember(id: Integer)
 GET		/member/login				controllers.MemberController.login()
 
 
